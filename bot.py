@@ -1,6 +1,7 @@
 # ============================================================
-#   TALANG SHOP BOT - Full Final Version
+#   TALANG SHOP BOT - Full Final Version (Fixed)
 #   Discord Shop Bot System
+#   Compatible: Python 3.10 | discord.py 2.3.2
 # ============================================================
 
 import discord
@@ -175,24 +176,26 @@ async def log_progres(
         return
 
     color_map = {
-        "OPEN": Color.blue(),
+        "OPEN":                Color.blue(),
         "MENUNGGU PEMBAYARAN": Color.yellow(),
-        "BUKTI DIKIRIM": Color.orange(),
-        "LUNAS": Color.green(),
-        "PRODUK TERKIRIM": Color.green(),
-        "SELESAI": Color.green(),
-        "DITOLAK": Color.red(),
-        "CLOSED": Color.dark_grey(),
+        "BUKTI DIKIRIM":       Color.orange(),
+        "LUNAS":               Color.green(),
+        "PRODUK TERKIRIM":     Color.green(),
+        "SELESAI":             Color.green(),
+        "DITOLAK":             Color.red(),
+        "CLOSED":              Color.dark_grey(),
+        "TIMEOUT":             Color.dark_red(),
     }
     emoji_map = {
-        "OPEN": "🔵",
+        "OPEN":                "🔵",
         "MENUNGGU PEMBAYARAN": "🟡",
-        "BUKTI DIKIRIM": "🟠",
-        "LUNAS": "🟢",
-        "PRODUK TERKIRIM": "✅",
-        "SELESAI": "✅",
-        "DITOLAK": "🔴",
-        "CLOSED": "⚫",
+        "BUKTI DIKIRIM":       "🟠",
+        "LUNAS":               "🟢",
+        "PRODUK TERKIRIM":     "✅",
+        "SELESAI":             "✅",
+        "DITOLAK":             "🔴",
+        "CLOSED":              "⚫",
+        "TIMEOUT":             "⏰",
     }
 
     embed = Embed(
@@ -200,8 +203,8 @@ async def log_progres(
         color=color_map.get(status, Color.greyple()),
         timestamp=datetime.now()
     )
-    embed.add_field(name="👤 Member", value=user.mention, inline=True)
-    embed.add_field(name="📂 Kategori", value=kategori, inline=True)
+    embed.add_field(name="👤 Member",   value=user.mention,  inline=True)
+    embed.add_field(name="📂 Kategori", value=kategori,       inline=True)
     embed.add_field(
         name="📊 Status",
         value=f"{emoji_map.get(status, '⚪')} {status}",
@@ -211,6 +214,7 @@ async def log_progres(
         embed.add_field(name="📝 Detail", value=detail, inline=False)
     embed.set_footer(text=f"TALANG SHOP • {get_timestamp()}")
     await channel.send(embed=embed)
+
 
 async def send_notifikasi(
     guild: discord.Guild,
@@ -230,8 +234,8 @@ async def send_notifikasi(
         color=Color.gold(),
         timestamp=datetime.now()
     )
-    embed.add_field(name="👤 Member", value=user.mention, inline=True)
-    embed.add_field(name="📂 Kategori", value=kategori, inline=True)
+    embed.add_field(name="👤 Member",   value=user.mention, inline=True)
+    embed.add_field(name="📂 Kategori", value=kategori,      inline=True)
     if detail:
         embed.add_field(name="📝 Detail", value=detail, inline=False)
     embed.add_field(
@@ -241,6 +245,7 @@ async def send_notifikasi(
     )
     embed.set_footer(text=f"TALANG SHOP • {get_timestamp()}")
     await channel.send(content="@everyone", embed=embed)
+
 
 async def send_review_channel(
     guild: discord.Guild,
@@ -262,8 +267,8 @@ async def send_review_channel(
         color=Color.gold(),
         timestamp=datetime.now()
     )
-    embed.add_field(name="👤 Member", value=user.mention, inline=True)
-    embed.add_field(name="📂 Kategori", value=kategori, inline=True)
+    embed.add_field(name="👤 Member",        value=user.mention, inline=True)
+    embed.add_field(name="📂 Kategori",      value=kategori,      inline=True)
     embed.add_field(
         name=f"⭐ Rating ({rating}/5)",
         value=stars,
@@ -294,11 +299,11 @@ class OpenTiketView(ui.View):
             title="📂 Pilih Kategori Tiket",
             description=(
                 "Silakan pilih layanan yang kamu butuhkan:\n\n"
-                "🛒 **Beli Produk** - Lihat & beli produk .rbxm\n"
-                "🔧 **Fix System** - Perbaikan system\n"
-                "🎨 **Custom System** - Request custom\n"
-                "🗺️ **Jasa Buat Maps** - Pembuatan maps\n"
-                "💬 **Konsultasi** - Tanya dengan staff"
+                "🛒 **Beli Produk** — Lihat & beli produk `.rbxm`\n"
+                "🔧 **Fix System** — Perbaikan system\n"
+                "🎨 **Custom System** — Request custom\n"
+                "🗺️ **Jasa Buat Maps** — Pembuatan maps\n"
+                "💬 **Konsultasi** — Tanya dengan staff"
             ),
             color=Color.blue()
         )
@@ -339,21 +344,21 @@ class KategoriView(ui.View):
         # Cek tiket aktif
         async with aiosqlite.connect(DB_FILE) as db:
             async with db.execute(
-                "SELECT channel_id FROM tiket WHERE user_id=? AND status NOT IN ('CLOSED')",
+                "SELECT channel_id FROM tiket WHERE user_id=? AND status NOT IN ('CLOSED','TIMEOUT')",
                 (user.id,)
             ) as cur:
                 existing = await cur.fetchone()
 
         if existing:
             ch = guild.get_channel(int(existing[0])) if existing[0] else None
-            msg = f"❌ Kamu sudah punya tiket aktif!"
+            msg = "❌ Kamu sudah punya tiket aktif!"
             if ch:
                 msg += f" Silakan selesaikan di {ch.mention}"
             await interaction.followup.send(msg, ephemeral=True)
             return
 
         tiket_number = await get_next_tiket_number()
-        ch_name      = f"tiket-{user.name.lower().replace(' ','-')}-{tiket_number:04d}"
+        ch_name = f"tiket-{user.name.lower().replace(' ', '-')}-{tiket_number:04d}"
 
         owner_role = await get_owner_role(guild)
         overwrites = {
@@ -408,9 +413,9 @@ class KategoriView(ui.View):
             color=Color.blue(),
             timestamp=datetime.now()
         )
-        wel.add_field(name="📂 Kategori", value=kategori, inline=True)
-        wel.add_field(name="👤 Member",   value=user.mention, inline=True)
-        wel.add_field(name="📊 Status",   value="🔵 OPEN", inline=True)
+        wel.add_field(name="📂 Kategori", value=kategori,      inline=True)
+        wel.add_field(name="👤 Member",   value=user.mention,  inline=True)
+        wel.add_field(name="📊 Status",   value="🔵 OPEN",     inline=True)
         if owner_role:
             wel.add_field(
                 name="👮 Staff",
@@ -435,7 +440,7 @@ class KategoriView(ui.View):
             await tiket_ch.send(embed=svc)
             await tiket_ch.send(
                 embed=Embed(
-                    description="🔧 **Panel Kontrol Tiket** (Hanya OWNER)",
+                    description="🔧 **Panel Kontrol Tiket** — Hanya OWNER",
                     color=Color.dark_grey()
                 ),
                 view=ServiceControlView(tiket_number, user.id, kategori)
@@ -446,23 +451,23 @@ class KategoriView(ui.View):
             ephemeral=True
         )
 
-    @ui.button(label="🛒 Beli Produk",      style=ButtonStyle.green,  custom_id="kat_beli",   row=0)
+    @ui.button(label="🛒 Beli Produk",     style=ButtonStyle.green,   custom_id="kat_beli",   row=0)
     async def beli(self, i: Interaction, b: ui.Button):
         await self.create_tiket(i, "Beli Produk")
 
-    @ui.button(label="🔧 Fix System",       style=ButtonStyle.blurple, custom_id="kat_fix",    row=0)
+    @ui.button(label="🔧 Fix System",      style=ButtonStyle.blurple, custom_id="kat_fix",    row=0)
     async def fix(self, i: Interaction, b: ui.Button):
         await self.create_tiket(i, "Fix System")
 
-    @ui.button(label="🎨 Custom System",    style=ButtonStyle.blurple, custom_id="kat_custom", row=1)
+    @ui.button(label="🎨 Custom System",   style=ButtonStyle.blurple, custom_id="kat_custom", row=1)
     async def custom(self, i: Interaction, b: ui.Button):
         await self.create_tiket(i, "Custom System")
 
-    @ui.button(label="🗺️ Jasa Buat Maps",  style=ButtonStyle.blurple, custom_id="kat_maps",   row=1)
+    @ui.button(label="🗺️ Jasa Buat Maps", style=ButtonStyle.blurple, custom_id="kat_maps",   row=1)
     async def maps(self, i: Interaction, b: ui.Button):
         await self.create_tiket(i, "Jasa Buat Maps")
 
-    @ui.button(label="💬 Konsultasi",       style=ButtonStyle.grey,   custom_id="kat_konsul", row=2)
+    @ui.button(label="💬 Konsultasi",      style=ButtonStyle.grey,    custom_id="kat_konsul", row=2)
     async def konsul(self, i: Interaction, b: ui.Button):
         await self.create_tiket(i, "Konsultasi dengan Staff")
 
@@ -477,7 +482,7 @@ async def show_products(channel, user, tiket_number):
             products = await cur.fetchall()
 
     header = Embed(
-        title="🛒 KATALOG PRODUK - TALANG SHOP",
+        title="🛒 KATALOG PRODUK — TALANG SHOP",
         description=(
             "Berikut adalah daftar produk yang tersedia.\n"
             "Klik tombol **🛒 Beli** pada produk yang kamu inginkan."
@@ -490,13 +495,13 @@ async def show_products(channel, user, tiket_number):
     if not products:
         await channel.send(
             embed=Embed(
-                description="❌ Belum ada produk yang tersedia saat ini.",
+                description="❌ Belum ada produk yang tersedia saat ini.\nHubungi OWNER untuk informasi lebih lanjut.",
                 color=Color.red()
             )
         )
         await channel.send(
             embed=Embed(
-                description="🔧 **Panel Kontrol Tiket** (Hanya OWNER)",
+                description="🔧 **Panel Kontrol Tiket** — Hanya OWNER",
                 color=Color.dark_grey()
             ),
             view=ServiceControlView(tiket_number, user.id, "Beli Produk")
@@ -510,19 +515,15 @@ async def show_products(channel, user, tiket_number):
             title=f"📦 {nama}",
             color=Color.green() if ada else Color.red()
         )
-        emb.add_field(name="💰 Harga", value=format_rupiah(harga), inline=True)
-        emb.add_field(
-            name="📊 Stok",
-            value=str(stok) if ada else "**HABIS ❌**",
-            inline=True
-        )
+        emb.add_field(name="💰 Harga", value=format_rupiah(harga),                inline=True)
+        emb.add_field(name="📊 Stok",  value=str(stok) if ada else "**HABIS ❌**", inline=True)
         view = BuyProductView(prod_id, nama, harga, stok, tiket_number) if ada else None
         await channel.send(embed=emb, view=view)
 
     await channel.send("─" * 35)
     await channel.send(
         embed=Embed(
-            description="🔧 **Panel Kontrol Tiket** (Hanya OWNER)",
+            description="🔧 **Panel Kontrol Tiket** — Hanya OWNER",
             color=Color.dark_grey()
         ),
         view=ServiceControlView(tiket_number, user.id, "Beli Produk")
@@ -541,7 +542,7 @@ class BuyProductView(ui.View):
         self.tiket_number = tiket_number
 
         btn = ui.Button(
-            label=f"🛒 Beli",
+            label="🛒 Beli",
             style=ButtonStyle.green,
             custom_id=f"buy_{prod_id}_{tiket_number}"
         )
@@ -562,12 +563,13 @@ class BuyProductView(ui.View):
             )
             return
 
-        # Cek apakah sudah ada transaksi aktif di tiket ini
+        # Cek transaksi aktif di tiket ini
         async with aiosqlite.connect(DB_FILE) as db:
             async with db.execute(
                 """SELECT t.id FROM transaksi t
                    JOIN tiket tk ON t.tiket_id = tk.id
-                   WHERE tk.tiket_number=? AND t.status NOT IN ('PRODUK TERKIRIM','DITOLAK')""",
+                   WHERE tk.tiket_number=?
+                   AND t.status NOT IN ('PRODUK TERKIRIM','DITOLAK','TIMEOUT')""",
                 (self.tiket_number,)
             ) as cur:
                 existing_trx = await cur.fetchone()
@@ -592,21 +594,21 @@ class BuyProductView(ui.View):
             color=Color.gold(),
             timestamp=datetime.now()
         )
-        order_emb.add_field(name="📦 Produk", value=self.nama,                  inline=True)
-        order_emb.add_field(name="💰 Total",  value=format_rupiah(self.harga),  inline=True)
+        order_emb.add_field(name="📦 Produk", value=self.nama,                 inline=True)
+        order_emb.add_field(name="💰 Total",  value=format_rupiah(self.harga), inline=True)
         order_emb.add_field(
             name="💳 Cara Bayar",
             value=(
-                "1. Scan QRIS di bawah ini\n"
+                f"1. Scan **QRIS** di bawah ini\n"
                 f"2. Transfer sebesar **{format_rupiah(self.harga)}**\n"
-                "3. Kirim **foto/screenshot bukti pembayaran** di channel ini"
+                f"3. Kirim **foto/screenshot bukti pembayaran** di channel ini"
             ),
             inline=False
         )
         order_emb.set_footer(text=f"TALANG SHOP • Tiket #{self.tiket_number:04d}")
         await interaction.channel.send(embed=order_emb)
 
-        # QRIS
+        # QRIS Image
         qris_url = config.get("QRIS_IMAGE_URL")
         if qris_url:
             qris_emb = Embed(title="📱 SCAN QRIS UNTUK MEMBAYAR", color=Color.blue())
@@ -705,7 +707,10 @@ async def wait_payment_proof(channel, user, prod_id, nama, harga, tiket_number):
         )
 
         owner_role = await get_owner_role(channel.guild)
-        notif_text = f"{owner_role.mention if owner_role else ''} Ada bukti pembayaran baru! Mohon dikonfirmasi."
+        notif_text = (
+            f"{owner_role.mention if owner_role else ''} "
+            f"Ada bukti pembayaran baru! Mohon segera dikonfirmasi."
+        )
 
         await channel.send(
             content=notif_text,
@@ -715,7 +720,7 @@ async def wait_payment_proof(channel, user, prod_id, nama, harga, tiket_number):
 
     except asyncio.TimeoutError:
         timeout_emb = Embed(
-            title="⏰ WAKTU HABIS",
+            title="⏰ WAKTU PEMBAYARAN HABIS",
             description=(
                 f"{user.mention} Waktu pembayaran telah habis **(30 menit)**.\n"
                 "Silakan buat tiket baru jika masih ingin membeli."
@@ -730,6 +735,12 @@ async def wait_payment_proof(channel, user, prod_id, nama, harga, tiket_number):
                 (tiket_number,)
             )
             await db.commit()
+
+        await log_progres(
+            channel.guild, tiket_number, user,
+            "Beli Produk", "TIMEOUT",
+            "Waktu pembayaran habis (30 menit)"
+        )
 
 # ============================================================
 # VIEW: KONFIRMASI PEMBAYARAN (OWNER ONLY)
@@ -751,7 +762,8 @@ class PaymentConfirmView(ui.View):
     async def confirm(self, interaction: Interaction, button: ui.Button):
         if not is_owner(interaction.user):
             await interaction.response.send_message(
-                "❌ Hanya **OWNER** yang bisa konfirmasi pembayaran!", ephemeral=True
+                "❌ Hanya **OWNER** yang bisa konfirmasi pembayaran!",
+                ephemeral=True
             )
             return
 
@@ -814,7 +826,8 @@ class PaymentConfirmView(ui.View):
     async def reject(self, interaction: Interaction, button: ui.Button):
         if not is_owner(interaction.user):
             await interaction.response.send_message(
-                "❌ Hanya **OWNER** yang bisa menolak pembayaran!", ephemeral=True
+                "❌ Hanya **OWNER** yang bisa menolak pembayaran!",
+                ephemeral=True
             )
             return
 
@@ -851,13 +864,13 @@ async def send_product_to_ticket(
         return
 
     try:
-        file_msg = await storage_ch.fetch_message(int(row[0]))
+        file_msg   = await storage_ch.fetch_message(int(row[0]))
         if not file_msg.attachments:
             await channel.send("❌ File tidak ditemukan di pesan storage!")
             return
 
-        attachment  = file_msg.attachments[0]
-        file_bytes  = await attachment.read()
+        attachment = file_msg.attachments[0]
+        file_bytes = await attachment.read()
 
         prod_emb = Embed(
             title="📦 PRODUK BERHASIL DIKIRIM!",
@@ -865,8 +878,8 @@ async def send_product_to_ticket(
             color=Color.green(),
             timestamp=datetime.now()
         )
-        prod_emb.add_field(name="📎 File",       value=attachment.filename,      inline=True)
-        prod_emb.add_field(name="💰 Total Bayar", value=format_rupiah(harga),    inline=True)
+        prod_emb.add_field(name="📎 File",        value=attachment.filename,   inline=True)
+        prod_emb.add_field(name="💰 Total Bayar", value=format_rupiah(harga),  inline=True)
         prod_emb.set_footer(text=f"TALANG SHOP • Tiket #{tiket_number:04d}")
 
         await channel.send(embed=prod_emb)
@@ -922,7 +935,7 @@ async def send_product_to_ticket(
 
     except discord.NotFound:
         await channel.send(
-            "❌ Pesan file di `produk-storage` tidak ditemukan! "
+            "❌ Pesan file di `produk-storage` tidak ditemukan!\n"
             "Mungkin sudah dihapus. Hubungi OWNER."
         )
     except Exception as e:
@@ -952,9 +965,9 @@ class RejectModal(ui.Modal, title="Alasan Penolakan"):
             color=Color.red(),
             timestamp=datetime.now()
         )
-        rej_emb.add_field(name="📦 Produk",      value=self.nama,               inline=True)
+        rej_emb.add_field(name="📦 Produk",       value=self.nama,                inline=True)
         rej_emb.add_field(name="❌ Ditolak oleh", value=interaction.user.mention, inline=True)
-        rej_emb.add_field(name="📝 Alasan",       value=self.reason.value,       inline=False)
+        rej_emb.add_field(name="📝 Alasan",       value=self.reason.value,        inline=False)
         rej_emb.add_field(
             name="ℹ️ Info",
             value="Silakan ulangi pembayaran atau hubungi OWNER.",
@@ -984,7 +997,7 @@ class RejectModal(ui.Modal, title="Alasan Penolakan"):
         )
 
 # ============================================================
-# VIEW: RATING (1–5 BINTANG)
+# VIEW: RATING (1-5 BINTANG)
 # ============================================================
 class RatingView(ui.View):
     def __init__(self, tiket_number, kategori, buyer: discord.Member):
@@ -1062,8 +1075,16 @@ class ReviewModal(ui.Modal, title="✍️ Tulis Review Kamu"):
             color=Color.gold(),
             timestamp=datetime.now()
         )
-        thx_emb.add_field(name=f"⭐ Rating ({self.rating}/5)", value=stars, inline=False)
-        thx_emb.add_field(name="💬 Review", value=f'"{self.review_text.value}"', inline=False)
+        thx_emb.add_field(
+            name=f"⭐ Rating ({self.rating}/5)",
+            value=stars,
+            inline=False
+        )
+        thx_emb.add_field(
+            name="💬 Review",
+            value=f'"{self.review_text.value}"',
+            inline=False
+        )
         thx_emb.set_footer(text="TALANG SHOP • Terima kasih atas reviewnya!")
         await interaction.response.send_message(embed=thx_emb)
 
@@ -1096,12 +1117,12 @@ class ServiceControlView(ui.View):
     async def selesai(self, interaction: Interaction, button: ui.Button):
         if not is_owner(interaction.user):
             await interaction.response.send_message(
-                "❌ Hanya **OWNER** yang bisa menandai tiket selesai!", ephemeral=True
+                "❌ Hanya **OWNER** yang bisa menandai tiket selesai!",
+                ephemeral=True
             )
             return
 
         await interaction.response.defer()
-
         buyer = interaction.guild.get_member(self.buyer_id)
 
         async with aiosqlite.connect(DB_FILE) as db:
@@ -1132,11 +1153,11 @@ class ServiceControlView(ui.View):
                 self.kategori, "SELESAI",
                 f"Diselesaikan oleh: {interaction.user.mention}"
             )
-
             rating_emb = Embed(
                 title="⭐ BERIKAN RATING & REVIEW",
                 description=(
-                    f"{buyer.mention} Terima kasih sudah menggunakan layanan **TALANG SHOP**! 🎉\n\n"
+                    f"{buyer.mention} Terima kasih sudah menggunakan layanan "
+                    f"**TALANG SHOP**! 🎉\n\n"
                     "Silakan berikan rating untuk layanan kami:"
                 ),
                 color=Color.gold()
@@ -1157,12 +1178,12 @@ class ServiceControlView(ui.View):
     async def close(self, interaction: Interaction, button: ui.Button):
         if not is_owner(interaction.user):
             await interaction.response.send_message(
-                "❌ Hanya **OWNER** yang bisa menutup tiket!", ephemeral=True
+                "❌ Hanya **OWNER** yang bisa menutup tiket!",
+                ephemeral=True
             )
             return
 
         await interaction.response.defer()
-
         buyer = interaction.guild.get_member(self.buyer_id)
 
         async with aiosqlite.connect(DB_FILE) as db:
@@ -1182,7 +1203,8 @@ class ServiceControlView(ui.View):
         close_emb = Embed(
             title="🔒 TIKET DITUTUP",
             description=(
-                f"Tiket **#{self.tiket_number:04d}** ditutup oleh {interaction.user.mention}.\n"
+                f"Tiket **#{self.tiket_number:04d}** ditutup oleh "
+                f"{interaction.user.mention}.\n"
                 "Channel akan dihapus dalam **5 detik**..."
             ),
             color=Color.dark_grey(),
@@ -1199,7 +1221,7 @@ class ServiceControlView(ui.View):
             pass
 
 # ============================================================
-# COMMANDS: SETUP EMBED OPEN TIKET
+# COMMAND: SETUP EMBED OPEN TIKET
 # ============================================================
 @bot.command(name="setup")
 @commands.has_permissions(administrator=True)
@@ -1220,28 +1242,26 @@ async def cmd_setup(ctx):
             "Selamat datang di **TALANG SHOP**! 🛒\n\n"
             "Klik tombol **🎫 Open Tiket** di bawah untuk membuka tiket.\n\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            "🛒 **Beli Produk** — Beli file .rbxm\n"
+            "🛒 **Beli Produk** — Beli file `.rbxm`\n"
             "🔧 **Fix System** — Perbaikan system\n"
             "🎨 **Custom System** — Request custom\n"
             "🗺️ **Jasa Buat Maps** — Pembuatan maps\n"
             "💬 **Konsultasi** — Tanya dengan staff\n"
             "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
-            "⚡ Tiket akan otomatis dibuat & hanya terlihat oleh kamu dan staff."
+            "⚡ Tiket otomatis dibuat & hanya terlihat oleh kamu dan staff."
         ),
         color=Color.gold()
     )
     emb.set_footer(text="TALANG SHOP • Klik tombol di bawah untuk memulai")
-
     await channel.send(embed=emb, view=OpenTiketView())
     await ctx.send(f"✅ Embed tiket berhasil dikirim ke {channel.mention}!")
-
     try:
         await ctx.message.delete()
     except:
         pass
 
 # ============================================================
-# COMMANDS: SET CHANNEL
+# COMMAND: SET CHANNEL
 # ============================================================
 @bot.command(name="setchannel")
 @commands.has_permissions(administrator=True)
@@ -1265,26 +1285,24 @@ async def cmd_setchannel(ctx):
     await asyncio.sleep(1)
 
     channel_fields = [
-        ("CHANNEL_OPEN_TIKET_ID",    "🎫 Channel **#open-tiket**",      "mention channel"),
-        ("CHANNEL_NOTIFIKASI_ID",    "🔔 Channel **#notifikasi**",       "mention channel"),
-        ("CHANNEL_REVIEW_ID",        "⭐ Channel **#review**",           "mention channel"),
-        ("CHANNEL_PRODUK_STORAGE_ID","📦 Channel **#produk-storage**",   "mention channel"),
-        ("CHANNEL_PROGRES_TIKET_ID", "📊 Channel **#progres-tiket**",    "mention channel"),
+        ("CHANNEL_OPEN_TIKET_ID",     "🎫 Channel **#open-tiket**",    ),
+        ("CHANNEL_NOTIFIKASI_ID",     "🔔 Channel **#notifikasi**",     ),
+        ("CHANNEL_REVIEW_ID",         "⭐ Channel **#review**",         ),
+        ("CHANNEL_PRODUK_STORAGE_ID", "📦 Channel **#produk-storage**", ),
+        ("CHANNEL_PROGRES_TIKET_ID",  "📊 Channel **#progres-tiket**",  ),
     ]
-
     category_fields = [
-        ("CATEGORY_SHOP_ID",        "🛒 Category **SHOP**",         "ketik ID category"),
-        ("CATEGORY_OWNER_PANEL_ID", "🔒 Category **OWNER PANEL**",  "ketik ID category"),
-        ("CATEGORY_TIKET_ID",       "📁 Category **TIKET AKTIF**",  "ketik ID category"),
+        ("CATEGORY_SHOP_ID",        "🛒 Category **SHOP**",        ),
+        ("CATEGORY_OWNER_PANEL_ID", "🔒 Category **OWNER PANEL**", ),
+        ("CATEGORY_TIKET_ID",       "📁 Category **TIKET AKTIF**", ),
     ]
 
-    # Set channels
-    for key, label, hint in channel_fields:
-        await ctx.send(f"📝 {label} ({hint}):")
+    for key, label in channel_fields:
+        await ctx.send(f"📝 {label} (mention channel, contoh: `#open-tiket`):")
         try:
             msg = await bot.wait_for("message", check=chk, timeout=60)
             if msg.content.lower() == "skip":
-                await ctx.send(f"⏭️ Dilewati.")
+                await ctx.send("⏭️ Dilewati.")
                 continue
             if msg.channel_mentions:
                 config[key] = msg.channel_mentions[0].id
@@ -1296,16 +1314,15 @@ async def cmd_setchannel(ctx):
             await ctx.send("⏰ Timeout! Jalankan `!setchannel` ulang.")
             return
 
-    # Set categories
-    for key, label, hint in category_fields:
+    for key, label in category_fields:
         await ctx.send(
-            f"📝 {label} ({hint}):\n"
-            f"💡 Cara: Klik kanan category → **Copy ID** (aktifkan Developer Mode dulu)"
+            f"📝 {label} (ketik **ID category**):\n"
+            f"💡 Cara dapat ID: Aktifkan Developer Mode → Klik kanan category → **Copy ID**"
         )
         try:
             msg = await bot.wait_for("message", check=chk, timeout=60)
             if msg.content.lower() == "skip":
-                await ctx.send(f"⏭️ Dilewati.")
+                await ctx.send("⏭️ Dilewati.")
                 continue
             try:
                 cat_id  = int(msg.content.strip())
@@ -1315,7 +1332,7 @@ async def cmd_setchannel(ctx):
                     save_config(config)
                     await ctx.send(f"✅ {label} → **{cat_obj.name}**")
                 else:
-                    await ctx.send(f"❌ ID tidak valid atau bukan category!")
+                    await ctx.send("❌ ID tidak valid atau bukan category!")
             except ValueError:
                 await ctx.send("❌ Masukkan angka ID!")
         except asyncio.TimeoutError:
@@ -1327,17 +1344,17 @@ async def cmd_setchannel(ctx):
             title="✅ SETUP CHANNEL SELESAI!",
             description=(
                 "Semua channel & category sudah dikonfigurasi.\n\n"
-                "Langkah selanjutnya:\n"
-                "1. `!setqris` — Upload gambar QRIS\n"
-                "2. `!addproduk` — Tambah produk\n"
-                "3. `!setup` — Aktifkan embed open tiket"
+                "**Langkah selanjutnya:**\n"
+                "1️⃣ `!setqris` — Upload gambar QRIS\n"
+                "2️⃣ `!addproduk` — Tambah produk\n"
+                "3️⃣ `!setup` — Aktifkan embed open tiket"
             ),
             color=Color.green()
         )
     )
 
 # ============================================================
-# COMMANDS: SET QRIS
+# COMMAND: SET QRIS
 # ============================================================
 @bot.command(name="setqris")
 @commands.has_permissions(administrator=True)
@@ -1365,10 +1382,7 @@ async def cmd_setqris(ctx):
         if url:
             config["QRIS_IMAGE_URL"] = url
             save_config(config)
-            emb = Embed(
-                title="✅ QRIS Berhasil Diset!",
-                color=Color.green()
-            )
+            emb = Embed(title="✅ QRIS Berhasil Diset!", color=Color.green())
             emb.set_image(url=url)
             await ctx.send(embed=emb)
         else:
@@ -1377,7 +1391,7 @@ async def cmd_setqris(ctx):
         await ctx.send("⏰ Timeout!")
 
 # ============================================================
-# COMMANDS: TAMBAH PRODUK
+# COMMAND: TAMBAH PRODUK
 # ============================================================
 @bot.command(name="addproduk")
 @commands.has_permissions(administrator=True)
@@ -1403,7 +1417,7 @@ async def cmd_addproduk(ctx):
             return
 
         # HARGA
-        await ctx.send(f"**[2/4]** 💰 Masukkan **harga** `{nama}` (angka saja, contoh: `25000`):")
+        await ctx.send(f"**[2/4]** 💰 Masukkan **harga** untuk `{nama}` (angka saja, contoh: `25000`):")
         msg = await bot.wait_for("message", check=chk, timeout=60)
         try:
             harga = int(msg.content.strip())
@@ -1414,7 +1428,7 @@ async def cmd_addproduk(ctx):
             return
 
         # STOK
-        await ctx.send(f"**[3/4]** 📊 Masukkan **stok** `{nama}`:")
+        await ctx.send(f"**[3/4]** 📊 Masukkan **stok** untuk `{nama}`:")
         msg = await bot.wait_for("message", check=chk, timeout=60)
         try:
             stok = int(msg.content.strip())
@@ -1436,10 +1450,10 @@ async def cmd_addproduk(ctx):
             await ctx.send("❌ File harus berformat **`.rbxm`**!")
             return
 
-        # Simpan ke storage
+        # Simpan ke produk-storage
         storage_id = config.get("CHANNEL_PRODUK_STORAGE_ID")
         if not storage_id:
-            await ctx.send("❌ Channel `produk-storage` belum diset!")
+            await ctx.send("❌ Channel `produk-storage` belum diset! Jalankan `!setchannel` dulu.")
             return
 
         storage_ch = ctx.guild.get_channel(int(storage_id))
@@ -1448,14 +1462,10 @@ async def cmd_addproduk(ctx):
             return
 
         file_bytes = await att.read()
-
-        st_emb = Embed(
-            title=f"📁 STORAGE — {nama}",
-            color=Color.blue()
-        )
+        st_emb = Embed(title=f"📁 STORAGE — {nama}", color=Color.blue())
         st_emb.add_field(name="💰 Harga", value=format_rupiah(harga), inline=True)
         st_emb.add_field(name="📊 Stok",  value=str(stok),            inline=True)
-        st_emb.set_footer(text=f"TALANG SHOP • Auto-saved")
+        st_emb.set_footer(text="TALANG SHOP • Auto-saved")
 
         st_msg = await storage_ch.send(
             embed=st_emb,
@@ -1485,7 +1495,7 @@ async def cmd_addproduk(ctx):
         await ctx.send("⏰ Timeout! Jalankan `!addproduk` ulang.")
 
 # ============================================================
-# COMMANDS: LIST PRODUK
+# COMMAND: LIST PRODUK
 # ============================================================
 @bot.command(name="listproduk")
 @commands.has_permissions(administrator=True)
@@ -1517,7 +1527,7 @@ async def cmd_listproduk(ctx):
     await ctx.send(embed=emb)
 
 # ============================================================
-# COMMANDS: EDIT PRODUK
+# COMMAND: EDIT PRODUK
 # ============================================================
 @bot.command(name="editproduk")
 @commands.has_permissions(administrator=True)
@@ -1548,7 +1558,7 @@ async def cmd_editproduk(ctx):
     )
 
     try:
-        msg    = await bot.wait_for("message", check=chk, timeout=60)
+        msg     = await bot.wait_for("message", check=chk, timeout=60)
         prod_id = int(msg.content.strip())
 
         async with aiosqlite.connect(DB_FILE) as db:
@@ -1563,7 +1573,6 @@ async def cmd_editproduk(ctx):
             return
 
         nama_now, harga_now, stok_now = row
-
         await ctx.send(
             embed=Embed(
                 title=f"✏️ Edit Produk #{prod_id} — {nama_now}",
@@ -1571,7 +1580,7 @@ async def cmd_editproduk(ctx):
                     f"1️⃣ Nama  (sekarang: **{nama_now}**)\n"
                     f"2️⃣ Harga (sekarang: **{format_rupiah(harga_now)}**)\n"
                     f"3️⃣ Stok  (sekarang: **{stok_now}**)\n"
-                    f"4️⃣ File .rbxm\n\n"
+                    f"4️⃣ File `.rbxm`\n\n"
                     f"Ketik angka **(1/2/3/4)**:"
                 ),
                 color=Color.blue()
@@ -1593,14 +1602,14 @@ async def cmd_editproduk(ctx):
 
             elif choice == "2":
                 await ctx.send("💰 Masukkan **harga baru** (angka saja):")
-                msg = await bot.wait_for("message", check=chk, timeout=60)
+                msg   = await bot.wait_for("message", check=chk, timeout=60)
                 new_h = int(msg.content.strip())
                 await db.execute("UPDATE produk SET harga=? WHERE id=?", (new_h, prod_id))
                 await ctx.send(f"✅ Harga diubah → **{format_rupiah(new_h)}**")
 
             elif choice == "3":
                 await ctx.send("📊 Masukkan **stok baru**:")
-                msg = await bot.wait_for("message", check=chk, timeout=60)
+                msg   = await bot.wait_for("message", check=chk, timeout=60)
                 new_s = int(msg.content.strip())
                 await db.execute("UPDATE produk SET stok=? WHERE id=?", (new_s, prod_id))
                 await ctx.send(f"✅ Stok diubah → **{new_s}**")
@@ -1621,7 +1630,7 @@ async def cmd_editproduk(ctx):
                 att        = msg.attachments[0]
                 file_bytes = await att.read()
                 st_msg     = await storage_ch.send(
-                    content=f"📁 UPDATE — Produk #{prod_id}",
+                    content=f"📁 UPDATE FILE — Produk #{prod_id}",
                     file=discord.File(fp=io.BytesIO(file_bytes), filename=att.filename)
                 )
                 await db.execute(
@@ -1631,7 +1640,7 @@ async def cmd_editproduk(ctx):
                 await ctx.send(f"✅ File diupdate → **{att.filename}**")
 
             else:
-                await ctx.send("❌ Pilihan tidak valid!")
+                await ctx.send("❌ Pilihan tidak valid! Ketik 1, 2, 3, atau 4.")
                 return
 
             await db.commit()
@@ -1642,7 +1651,7 @@ async def cmd_editproduk(ctx):
         await ctx.send("❌ Masukkan angka yang valid!")
 
 # ============================================================
-# COMMANDS: HAPUS PRODUK
+# COMMAND: HAPUS PRODUK
 # ============================================================
 @bot.command(name="delproduk")
 @commands.has_permissions(administrator=True)
@@ -1685,9 +1694,7 @@ async def cmd_delproduk(ctx):
                 await ctx.send("❌ Produk tidak ditemukan!")
                 return
 
-            await db.execute(
-                "UPDATE produk SET active=0 WHERE id=?", (prod_id,)
-            )
+            await db.execute("UPDATE produk SET active=0 WHERE id=?", (prod_id,))
             await db.commit()
 
         await ctx.send(
@@ -1703,7 +1710,7 @@ async def cmd_delproduk(ctx):
         await ctx.send("❌ Masukkan angka ID yang valid!")
 
 # ============================================================
-# COMMANDS: UPDATE STOK
+# COMMAND: UPDATE STOK
 # ============================================================
 @bot.command(name="stok")
 @commands.has_permissions(administrator=True)
@@ -1750,9 +1757,7 @@ async def cmd_stok(ctx):
                 await ctx.send("❌ Produk tidak ditemukan!")
                 return
 
-            await db.execute(
-                "UPDATE produk SET stok=? WHERE id=?", (new_stok, prod_id)
-            )
+            await db.execute("UPDATE produk SET stok=? WHERE id=?", (new_stok, prod_id))
             await db.commit()
 
         await ctx.send(
@@ -1768,7 +1773,7 @@ async def cmd_stok(ctx):
         await ctx.send("❌ Masukkan angka yang valid!")
 
 # ============================================================
-# COMMANDS: HELP
+# COMMAND: HELP
 # ============================================================
 @bot.command(name="help")
 async def cmd_help(ctx):
@@ -1802,7 +1807,7 @@ async def cmd_help(ctx):
         inline=False
     )
     emb.set_footer(text="TALANG SHOP • Hanya OWNER yang bisa menggunakan command ini")
-    await ctx.send(embed=emb, ephemeral=True)
+    await ctx.send(embed=emb)
 
 # ============================================================
 # EVENTS
@@ -1810,14 +1815,13 @@ async def cmd_help(ctx):
 @bot.event
 async def on_ready():
     await init_db()
-    # Register persistent views
     bot.add_view(OpenTiketView())
     print("=" * 55)
     print(f"  🤖  {config['BOT_NAME']} is ONLINE!")
     print(f"  📌  Logged in as : {bot.user}")
     print(f"  📌  Bot ID       : {bot.user.id}")
     print(f"  📌  Prefix       : {config['PREFIX']}")
-    print(f"  📌  DB File      : {DB_FILE}")
+    print(f"  📌  Python Compat: 3.10")
     print("=" * 55)
 
 @bot.event
@@ -1833,13 +1837,13 @@ async def on_command_error(ctx, error):
         raise error
 
 # ============================================================
-# RUN
+# RUN BOT
 # ============================================================
 if __name__ == "__main__":
     TOKEN = os.environ.get("TOKEN")
     if not TOKEN:
         print("❌ TOKEN tidak ditemukan!")
-        print("   Pastikan file .env ada dan berisi TOKEN=xxx")
+        print("   Pastikan file .env ada dan berisi: TOKEN=xxx")
         print("   Atau set Environment Variable TOKEN di Railway.")
     else:
         print(f"🚀 Starting {config['BOT_NAME']}...")
