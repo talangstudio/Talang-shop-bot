@@ -1,0 +1,19 @@
+{
+    "TOKEN": "MASUKKAN_TOKEN_BOT_KAMU_DISINI",
+    "PREFIX": "!",
+    "BOT_NAME": "TALANG SHOP",
+    "OWNER_ROLE_NAME": "OWNER",
+    "CURRENCY": "Rp",
+
+    "CATEGORY_SHOP_ID": null,
+    "CATEGORY_OWNER_PANEL_ID": null,
+    "CATEGORY_TIKET_ID": null,
+
+    "CHANNEL_OPEN_TIKET_ID": null,
+    "CHANNEL_NOTIFIKASI_ID": null,
+    "CHANNEL_REVIEW_ID": null,
+    "CHANNEL_PRODUK_STORAGE_ID": null,
+    "CHANNEL_PROGRES_TIKET_ID": null,
+
+    "QRIS_IMAGE_URL": null
+}
